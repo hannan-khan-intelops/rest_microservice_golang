@@ -15,7 +15,8 @@ helm uninstall microsvc
 
 ## HOW DOES IT WORK?
 This application (look at commit history to see what changes had to be made) creates a very simple rest api in golang.  
-Here are the steps in order:
+Here are the steps in order:  
+[Full Tutorial](https://www.techtarget.com/searchitoperations/tutorial/Build-and-deploy-a-microservice-with-Kubernetes)
 1. Create a project directory and run `go mod init example.com/microsvc`
 2. Create the `main.go` script which takes care of http requests.
 3. Add a `.DOCKERFILE` in which you create the script's artifact. You will also need to set the following:
