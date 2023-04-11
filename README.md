@@ -1,1 +1,66 @@
 # rest_microservice_golang
+
+## Helm Chart
+This repo comes with a helm chart for your ease of use.
+To install via `helm`, simply navigate to this project's root dir `go_reformatting_json` and
+issue the following command:  
+```shell
+helm install microsvc microsvc/ --values microsvc/values.yaml
+```
+This creates a pod in your cluster within the `default` namespace.  
+This also makes uninstalling via `helm` easy. Just issue the following command:
+```shell
+helm uninstall microsvc
+```
+
+## HOW DOES IT WORK?
+This application (look at commit history to see what changes had to be made) creates a very simple rest api in golang.  
+Here are the steps in order:
+1. Create a project directory and run `go mod init example.com/microsvc`
+2. Create the `main.go` script which takes care of http requests.
+3. Add a `.DOCKERFILE` in which you create the script's artifact. You will also need to set the following:
+    ```dockerfile
+    ENV PORT 4317
+    EXPOSE 4317
+    ```
+    Set the port to whatever you would like. Then build and push the dockerimage.
+4. Navigate to the root project directory and run the following command:
+    ```shell
+    helm create microsvc
+    ```
+    This will create a helm chart for easy deployment/maintenance on Kubernetes.
+5. Within the helm chart, navigate to following files, and make the following changes:
+   * `values.yaml`
+     * Change the image's repository name to the name and tag to the one you pushed to.
+     * Update the `fullnameOverride` to whatever you wish.
+     * Update the `service.port` to the port you will use.
+     * Set `ingress.enabled` to true.
+   * `templates/deployment.yaml`
+     * Update `containers.ports.containerPort` to the same port used throughout.
+     * Comment out the `containers.livenessProbe` and `containers.readinessProbe`.
+     * Add a `containers.env` port, right after resources:
+         ```yaml
+       resources:
+         {{- toYaml .Values.resources | nindent 12 }}
+       env:
+         - name: PORT
+           value: "4317"
+         ```
+   * `templates/ingress.yaml`
+     * Update `metadata.labels`:
+       ```yaml
+       labels:
+         tier: backend
+       ```
+   * `templates/service.yaml`
+     * Update `spec.externalName` to be:
+       ```yaml
+       spec:
+         type: {{ .Values.service.type }}
+         externalName: {{ include "microsvc.fullname" . }}.default.svc.cluster.local
+       ```
+6. Your microservice is now ready to deploy. Use helm install to deploy (command mentioned above).
+7. Test your microservice on kubernetes by shelling into another cluster. Then issue the following command:
+```shell
+curl microsvc.default.svc.cluster.local:4317/employee
+```
